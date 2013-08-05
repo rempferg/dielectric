@@ -33,7 +33,7 @@ for z in numpy.arange(0, Nz):
             
             r_sq = (x-Nx/2.)**2 + (y-Ny/2.)**2 + (z-Nz/2.)**2
             
-            if r_sq >= 4.**2 and r_sq < 5.**2:
+            if r_sq >= 8.**2 and r_sq < 9.**2:
                 boundary_positions.resize( [ boundary_positions.shape[0]+1, 3 ] )
                 boundary_positions[-1] = [z, y, x]
 
