@@ -33,7 +33,7 @@ for z in numpy.arange(0, Nz):
             
             r_sq = (x-Nx/2.)**2 + (y-Ny/2.)**2 + (z-Nz/2.)**2
             
-            if r_sq >= 8.**2 and r_sq < 9.**2:
+            if r_sq >= 4.**2 and r_sq < 5.**2:
                 boundary_positions.resize( [ boundary_positions.shape[0]+1, 3 ] )
                 boundary_positions[-1] = [z, y, x]
 
@@ -61,13 +61,39 @@ charge_potential = numpy.fft.irfftn( tmp_grid_fft )
 
 
 #populate boundary element interaction matrix and invert
+E = numpy.zeros(3, dtype=float)
+
 for i in numpy.arange( 0, len(boundary_positions) ):
     for k in numpy.arange( 0, len(boundary_positions) ):
     
-        d = numpy.subtract( boundary_positions[i], boundary_positions[k] )
-        d = numpy.mod( d, [ Nx, Ny, Nz ] )
+        d_up = numpy.subtract( boundary_positions[i]+[1,0,0], boundary_positions[k] )
+        d_up = numpy.mod( d_up, [ Nx, Ny, Nz ] )
+    
+        d_dn = numpy.subtract( boundary_positions[i]+[-1,0,0], boundary_positions[k] )
+        d_dn = numpy.mod( d_dn, [ Nx, Ny, Nz ] )
         
-        boundary_interaction_matrix[i,k] = charge_potential[ d[2], d[1], d[0] ]
+        E[0] = -( charge_potential[ d_up[2], d_up[1], d_up[0] ] - charge_potential[ d_dn[2], d_dn[1], d_dn[0] ] ) / ( 2.0 * h )
+    
+        d_up = numpy.subtract( boundary_positions[i]+[0,1,0], boundary_positions[k] )
+        d_up = numpy.mod( d_up, [ Nx, Ny, Nz ] )
+    
+        d_dn = numpy.subtract( boundary_positions[i]+[0,-1,0], boundary_positions[k] )
+        d_dn = numpy.mod( d_dn, [ Nx, Ny, Nz ] )
+        
+        E[1] = -( charge_potential[ d_up[2], d_up[1], d_up[0] ] - charge_potential[ d_dn[2], d_dn[1], d_dn[0] ] ) / ( 2.0 * h )
+    
+        d_up = numpy.subtract( boundary_positions[i]+[0,0,1], boundary_positions[k] )
+        d_up = numpy.mod( d_up, [ Nx, Ny, Nz ] )
+    
+        d_dn = numpy.subtract( boundary_positions[i]+[0,0,-1], boundary_positions[k] )
+        d_dn = numpy.mod( d_dn, [ Nx, Ny, Nz ] )
+        
+        E[2] = -( charge_potential[ d_up[2], d_up[1], d_up[0] ] - charge_potential[ d_dn[2], d_dn[1], d_dn[0] ] ) / ( 2.0 * h )
+        
+        n = numpy.array( boundary_positions[i] - [Nx/2.0, Ny/2.0, Nz/2.0] )
+        n /= numpy.sqrt( numpy.square(n).sum() )
+        
+        boundary_interaction_matrix[i,k] = E.dot(n) 
 
 print "Matrix has size", boundary_interaction_matrix.shape
 
@@ -82,7 +108,7 @@ for z in numpy.arange(0, Nz):
             charge_potential[z,y,x] = x
 
 
-#collect vector containing boundary potential
+#collect vector containing boundary normal e-field
 for i in numpy.arange( 0, len(boundary_positions) ):
 
     boundary_potential_charge[i] = charge_potential[ boundary_positions[i,2], boundary_positions[i,1], boundary_positions[i,0] ]
@@ -124,4 +150,4 @@ for z in numpy.arange(0, Nz):
         
             charge_potential[z,y,x] += x
 
-dielectric_tools.write_scalar_vtk( charge_potential, "potential.vtk" )
+dielectric_tools.write_scalar_vtk( charge_potential, "potential_neumann.vtk" )

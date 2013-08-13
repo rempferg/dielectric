@@ -124,4 +124,4 @@ for z in numpy.arange(0, Nz):
         
             charge_potential[z,y,x] += x
 
-dielectric_tools.write_scalar_vtk( charge_potential, "potential.vtk" )
+dielectric_tools.write_scalar_vtk( charge_potential, "potential_dirichlet.vtk" )
